@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Microbial Fermentation Explorer</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  canvas { border-radius: 8px; }
+  .slider-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .slider-row input[type=range] { flex: 1; }
+  .slider-val { min-width: 36px; text-align: right; font-weight: bold; }
+</style>
+</head>
+<body class="bg-gray-950 text-white min-h-screen">
+<div class="max-w-5xl mx-auto p-4">
+  <h1 class="text-2xl font-bold text-center text-emerald-400 mb-1">Microbial Fermentation Explorer</h1>
+  <p class="text-center text-gray-400 text-sm mb-4">Design microbial ecosystems — watch biochemical warfare and symbiosis emerge</p>
+
+  <div class="flex flex-wrap gap-4 justify-center">
+    <div class="flex flex-col gap-3">
+      <canvas id="canvas" width="480" height="360" class="bg-gray-900"></canvas>
+      <div class="flex gap-2 justify-center flex-wrap text-xs">
+        <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full bg-green-500"></span>Lactobacillus</span>
+        <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full bg-blue-500"></span>Saccharomyces</span>
+        <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full bg-red-500"></span>E. coli</span>
+        <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full bg-yellow-400"></span>B. subtilis</span>
+        <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full bg-purple-400"></span>Clostridium</span>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-3 w-64">
+      <div class="bg-gray-800 rounded-xl p-4">
+        <h2 class="font-semibold text-emerald-300 mb-3">Environment</h2>
+        <div class="space-y-3">
+          <div class="slider-row">
+            <span class="w-20 text-gray-300">pH</span>
+            <input type="range" id="ph" min="30" max="90" value="65" class="accent-emerald-500">
+            <span class="slider-val text-emerald-400" id="ph-val">6.5</span>
+          </div>
+          <div class="slider-row">
+            <span class="w-20 text-gray-300">Sugar</span>
+            <input type="range" id="sugar" min="0" max="100" value="80" class="accent-yellow-500">
+            <span class="slider-val text-yellow-400" id="sugar-val">80</span>
+          </div>
+          <div class="slider-row">
+            <span class="w-20 text-gray-300">O₂</span>
+            <input type="range" id="oxygen" min="0" max="100" value="40" class="accent-blue-400">
+            <span class="slider-val text-blue-400" id="oxygen-val">40</span>
+          </div>
+          <div class="slider-row">
+            <span class="w-20 text-gray-300">Temp °C</span>
+            <input type="range" id="temp" min="15" max="55" value="37" class="accent-red-400">
+            <span class="slider-val text-red-400" id="temp-val">37°</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-gray-800 rounded-xl p-4">
+        <h2 class="font-semibold text-emerald-300 mb-3">Populations</h2>
+        <div class="space-y-2 text-sm" id="pop-stats">
+          <div class="flex justify-between"><span class="text-green-400">Lactobacillus</span><span id="pop-lacto">-</span></div>
+          <div class="flex justify-between"><span class="text-blue-400">Saccharomyces</span><span id="pop-sacch">-</span></div>
+          <div class="flex justify-between"><span class="text-red-400">E. coli</span><span id="pop-ecoli">-</span></div>
+          <div class="flex justify-between"><span class="text-yellow-400">B. subtilis</span><span id="pop-bsub">-</span></div>
+          <div class="flex justify-between"><span class="text-purple-400">Clostridium</span><span id="pop-clost">-</span></div>
+          <hr class="border-gray-600">
+          <div class="flex justify-between text-gray-400"><span>Lactic acid</span><span id="stat-lacid" class="text-pink-400">0</span></div>
+          <div class="flex justify-between text-gray-400"><span>Ethanol</span><span id="stat-eth" class="text-amber-400">0</span></div>
+          <div class="flex justify-between text-gray-400"><span>Current pH</span><span id="stat-ph" class="text-emerald-400">-</span></div>
+        </div>
+      </div>
+
+      <div class="bg-gray-800 rounded-xl p-4">
+        <h2 class="font-semibold text-emerald-300 mb-2">Inoculate</h2>
+        <div class="grid grid-cols-2 gap-1.5 text-xs">
+          <button onclick="addBacteria('lacto',20)" class="bg-green-800 hover:bg-green-700 px-2 py-1 rounded">+Lacto</button>
+          <button onclick="addBacteria('sacch',20)" class="bg-blue-800 hover:bg-blue-700 px-2 py-1 rounded">+Sacch</button>
+          <button onclick="addBacteria('ecoli',20)" class="bg-red-800 hover:bg-red-700 px-2 py-1 rounded">+E.coli</button>
+          <button onclick="addBacteria('bsub',20)" class="bg-yellow-800 hover:bg-yellow-700 px-2 py-1 rounded">+B.sub</button>
+          <button onclick="addBacteria('clost',20)" class="bg-purple-800 hover:bg-purple-700 px-2 py-1 rounded">+Clost</button>
+          <button onclick="resetSim()" class="bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded">Reset</button>
+        </div>
+      </div>
+
+      <div class="bg-gray-800 rounded-xl p-3">
+        <h2 class="font-semibold text-emerald-300 mb-2 text-sm">Events</h2>
+        <div id="event-log" class="text-xs text-gray-400 space-y-1 max-h-24 overflow-y-auto"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+const SPECIES = {
+  lacto: { color: '#22c55e', name: 'Lactobacillus', optPH: 5.5, optTemp: 37, optO2: 10, produces: 'lacticAcid', anaerobic: true },
+  sacch:  { color: '#3b82f6', name: 'Saccharomyces', optPH: 5.0, optTemp: 30, optO2: 20, produces: 'ethanol', anaerobic: false },
+  ecoli:  { color: '#ef4444', name: 'E. coli', optPH: 7.0, optTemp: 37, optO2: 50, produces: null, anaerobic: false },
+  bsub:   { color: '#facc15', name: 'B. subtilis', optPH: 7.0, optTemp: 37, optO2: 80, produces: null, anaerobic: false },
+  clost:  { color: '#c084fc', name: 'Clostridium', optPH: 6.5, optTemp: 37, optO2: 0, produces: null, anaerobic: true },
+};
+
+let particles = [], lacticAcid = 0, ethanol = 0, currentPH = 6.5, tick = 0;
+
+function Particle(type, x, y) {
+  return { type, x: x ?? Math.random()*W, y: y ?? Math.random()*H, vx: (Math.random()-0.5)*1.5, vy: (Math.random()-0.5)*1.5, age: 0, alive: true };
+}
+
+function resetSim() {
+  particles = [];
+  lacticAcid = 0; ethanol = 0;
+  currentPH = parseFloat(document.getElementById('ph').value) / 10;
+  tick = 0;
+  document.getElementById('event-log').innerHTML = '';
+  ['lacto','sacch','ecoli','bsub','clost'].forEach(t => addBacteria(t, 15));
+}
+
+function addBacteria(type, n) {
+  for (let i = 0; i < n; i++) particles.push(Particle(type));
+}
+
+function getEnv() {
+  return {
+    pH: currentPH,
+    sugar: parseInt(document.getElementById('sugar').value),
+    oxygen: parseInt(document.getElementById('oxygen').value),
+    temp: parseInt(document.getElementById('temp').value),
+  };
+}
+
+function fitnessScore(sp, env) {
+  const phDiff = Math.abs(env.pH - sp.optPH);
+  const tempDiff = Math.abs(env.temp - sp.optTemp);
+  const o2Diff = sp.anaerobic ? env.oxygen : Math.abs(env.oxygen - sp.optO2);
+  let score = 1 - (phDiff/4) - (tempDiff/30) - (o2Diff/100);
+  if (sp.anaerobic && env.oxygen > 50) score -= 0.4;
+  if (!sp.anaerobic && env.oxygen < 10) score -= 0.3;
+  score *= (env.sugar / 100);
+  return Math.max(0, Math.min(1, score));
+}
+
+function update() {
+  const env = getEnv();
+  tick++;
+  // Update currentPH from lactic acid
+  currentPH = parseFloat(document.getElementById('ph').value) / 10 - lacticAcid * 0.00015;
+  currentPH = Math.max(2.5, Math.min(9, currentPH));
+
+  const counts = {};
+  Object.keys(SPECIES).forEach(t => counts[t] = 0);
+  particles.forEach(p => { if (p.alive) counts[p.type]++; });
+
+  particles.forEach(p => {
+    if (!p.alive) return;
+    const sp = SPECIES[p.type];
+    const fit = fitnessScore(sp, env);
+    p.age++;
+    p.x += p.vx + (Math.random()-0.5)*0.5;
+    p.y += p.vy + (Math.random()-0.5)*0.5;
+    if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+    if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+
+    // Death
+    if (fit < 0.05 || p.age > 400 + Math.random()*200) { p.alive = false; return; }
+
+    // Produce metabolites
+    if (sp.produces === 'lacticAcid' && fit > 0.4) lacticAcid = Math.min(2000, lacticAcid + fit * 0.1);
+    if (sp.produces === 'ethanol' && fit > 0.4) ethanol = Math.min(2000, ethanol + fit * 0.08);
+
+    // Reproduce
+    if (tick % 8 === 0 && fit > 0.5 && Math.random() < fit * 0.25 && counts[p.type] < 200) {
+      particles.push(Particle(p.type, p.x + (Math.random()-0.5)*10, p.y + (Math.random()-0.5)*10));
+      counts[p.type]++;
+    }
+  });
+
+  // Cap particles
+  particles = particles.filter(p => p.alive).slice(-1500);
+
+  // Decay metabolites
+  lacticAcid *= 0.998;
+  ethanol *= 0.999;
+
+  // Events
+  if (tick % 50 === 0) {
+    const dominant = Object.entries(counts).sort((a,b) => b[1]-a[1])[0];
+    if (dominant[1] > 100) addEvent(`Tick ${tick}: ${SPECIES[dominant[0]].name} dominates (${dominant[1]})`);
+    if (currentPH < 4.0) addEvent(`Tick ${tick}: Acidification crash! pH=${currentPH.toFixed(1)}`);
+  }
+
+  drawFrame(counts, env);
+  updateStats(counts);
+}
+
+function drawFrame(counts, env) {
+  ctx.fillStyle = '#030712';
+  ctx.fillRect(0, 0, W, H);
+
+  // Draw lactic acid gradient
+  if (lacticAcid > 100) {
+    const grad = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, W/2);
+    grad.addColorStop(0, `rgba(236,72,153,${Math.min(0.2, lacticAcid/5000)})`);
+    grad.addColorStop(1, 'transparent');
+    ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
+  }
+
+  particles.forEach(p => {
+    const sp = SPECIES[p.type];
+    const fit = fitnessScore(sp, env);
+    ctx.globalAlpha = 0.5 + fit * 0.5;
+    ctx.fillStyle = sp.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 2.5 + fit*1.5, 0, Math.PI*2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+
+  // pH meter
+  const phX = 10, phY = H - 80;
+  ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(phX, phY, 110, 70);
+  ctx.fillStyle = '#6ee7b7'; ctx.font = '11px monospace';
+  ctx.fillText(`pH: ${currentPH.toFixed(2)}`, phX+6, phY+18);
+  ctx.fillText(`Lactic: ${lacticAcid.toFixed(0)}`, phX+6, phY+34);
+  ctx.fillText(`Ethanol: ${ethanol.toFixed(0)}`, phX+6, phY+50);
+  ctx.fillText(`Tick: ${tick}`, phX+6, phY+66);
+}
+
+function updateStats(counts) {
+  document.getElementById('pop-lacto').textContent = counts.lacto || 0;
+  document.getElementById('pop-sacch').textContent = counts.sacch || 0;
+  document.getElementById('pop-ecoli').textContent = counts.ecoli || 0;
+  document.getElementById('pop-bsub').textContent = counts.bsub || 0;
+  document.getElementById('pop-clost').textContent = counts.clost || 0;
+  document.getElementById('stat-lacid').textContent = lacticAcid.toFixed(0);
+  document.getElementById('stat-eth').textContent = ethanol.toFixed(0);
+  document.getElementById('stat-ph').textContent = currentPH.toFixed(2);
+}
+
+function addEvent(msg) {
+  const log = document.getElementById('event-log');
+  const d = document.createElement('div'); d.textContent = msg;
+  log.prepend(d);
+  while (log.children.length > 15) log.removeChild(log.lastChild);
+}
+
+['ph','sugar','oxygen','temp'].forEach(id => {
+  document.getElementById(id).addEventListener('input', function() {
+    const labels = {ph:'ph-val',sugar:'sugar-val',oxygen:'oxygen-val',temp:'temp-val'};
+    const suffixes = {ph: v => (v/10).toFixed(1), sugar: v => v, oxygen: v => v, temp: v => v+'°'};
+    document.getElementById(labels[id]).textContent = suffixes[id](this.value);
+  });
+});
+
+resetSim();
+setInterval(update, 50);
+</script>
+</body>
+</html>
